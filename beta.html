@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Quiz</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111418;
+      --bg-elevated: #1a1f26;
+      --surface: #20262e;
+      --surface-strong: #27303a;
+      --surface-soft: #242b34;
+      --line: rgba(255, 255, 255, 0.09);
+      --text: #f2f3f7;
+      --text-muted: #b7bdc9;
+      --primary: #7ec4f4;
+      --primary-strong: #68b4e8;
+      --secondary: #91a7ff;
+      --success: #7fe3b3;
+      --error: #ff8c8c;
+      --warning: #ffd37d;
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", "Noto Sans", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      padding: 32px 20px 120px;
+      overflow-x: hidden;
+    }
+
+    .background-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .background-grid {
+      opacity: 0.08;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 920px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-elevated);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+    }
+
+    .gate-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
+      margin: 8vh auto 0;
+    }
+
+    .gate-card {
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .gate-title {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .gate-text {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .gate-visual {
+      width: 72px;
+      height: 72px;
+      color: var(--primary);
+    }
+
+    .gate-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .version-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .version-heading {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .version-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .version-button {
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    }
+
+    .version-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(126, 196, 244, 0.4);
+    }
+
+    .version-button.active {
+      background: rgba(126, 196, 244, 0.12);
+      border-color: rgba(126, 196, 244, 0.42);
+    }
+
+    .version-button-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .version-button-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .gate-error {
+      min-height: 24px;
+      margin: 0;
+      color: var(--error);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 18px;
+      z-index: 6;
+      display: grid;
+      gap: 14px;
+      padding: 18px 20px;
+      background: rgba(26, 31, 38, 0.88);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    .app-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .app-header-copy {
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .app-header-kicker {
+      margin: 0;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .app-header-title {
+      margin: 0;
+      font-size: clamp(1.45rem, 3.6vw, 2rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .app-header-note {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .app-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .app-header-study {
+      display: grid;
+      gap: 8px;
+      justify-items: end;
+      flex: 1 1 320px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .header-badge.button-like {
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .header-badge.button-like:hover {
+      transform: translateY(-1px);
+      border-color: rgba(126, 196, 244, 0.24);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .header-badge-label {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .header-action {
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .header-action.icon-only {
+      width: 48px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-action svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .header-action:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .header-study-switcher {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .header-study-button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .header-study-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(126, 196, 244, 0.24);
+    }
+
+    .header-study-button.active {
+      background: rgba(126, 196, 244, 0.12);
+      border-color: rgba(126, 196, 244, 0.34);
+      color: var(--primary);
+    }
+
+    .settings-drawer {
+      display: grid;
+      gap: 12px;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+    }
+
+    .overlay-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 12;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(9, 12, 16, 0.62);
+      backdrop-filter: blur(12px);
+    }
+
+    .overlay-panel {
+      width: min(560px, 100%);
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      background: rgba(26, 31, 38, 0.96);
+      border: 1px solid var(--line);
+      box-shadow: 0 22px 48px rgba(0, 0, 0, 0.34);
+      display: grid;
+      gap: 16px;
+    }
+
+    .overlay-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .overlay-copy {
+      display: grid;
+      gap: 6px;
+    }
+
+    .overlay-kicker {
+      margin: 0;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .overlay-title {
+      margin: 0;
+      font-size: 1.25rem;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .overlay-note {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    .overlay-close {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .controls-panel {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 5;
+      width: min(420px, calc(100vw - 24px));
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+      margin-bottom: 0;
+      background: rgba(26, 31, 38, 0.92);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 22px 44px rgba(0, 0, 0, 0.32);
+    }
+
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .mode-button {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      text-align: left;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+      min-height: 68px;
+    }
+
+    .mode-button .mode-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.84rem;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      color: var(--text);
+    }
+
+    .mode-button .mode-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+
+    .mode-copy {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .mode-button.active {
+      background: rgba(126, 196, 244, 0.12);
+      border-color: rgba(126, 196, 244, 0.34);
+    }
+
+    .mode-visual {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+      color: var(--text-muted);
+      opacity: 0.95;
+    }
+
+    .mode-button.active .mode-title,
+    .mode-button.active .mode-note,
+    .mode-button.active .mode-visual {
+      color: var(--primary);
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .quiz-card {
+      display: grid;
+      gap: 18px;
+      text-align: left;
+    }
+
+    .quiz-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .quiz-chip-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .quiz-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: var(--surface);
+      color: var(--text-muted);
+      border: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+
+    .quiz-chip strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .quiz-chip.active-sheet {
+      background: rgba(145, 167, 255, 0.12);
+      color: var(--secondary);
+      border-color: rgba(145, 167, 255, 0.24);
+    }
+
+    .quiz-chip.active-sheet strong {
+      color: var(--text);
+    }
+
+    .progress-wrap {
+      position: relative;
+      width: min(280px, 100%);
+      padding-top: 18px;
+    }
+
+    .progress {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      border-radius: inherit;
+      background: var(--success);
+    }
+
+    .progress-bonus {
+      position: absolute;
+      right: 0;
+      top: 0;
+      color: var(--success);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      opacity: 0;
+      transform: translateY(0);
+      pointer-events: none;
+    }
+
+    .progress-bonus.show {
+      animation: progressBonusFloat 0.65s ease-out forwards;
+    }
+
+    .prompt-block {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    .prompt-label {
+      margin: 0 0 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .prompt-text {
+      margin: 0;
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .prompt-text.prompt-text-emphasis {
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      line-height: 1.25;
+      letter-spacing: -0.03em;
+    }
+
+    .answer-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    input {
+      flex: 1 1 260px;
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 16px 18px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    input:focus {
+      border-color: rgba(126, 196, 244, 0.52);
+      background: var(--surface-strong);
+    }
+
+    .primary-button {
+      padding: 16px 22px;
+      border-radius: 18px;
+      background: var(--primary);
+      color: #0b2230;
+      font-weight: 700;
+    }
+
+    .choices-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .choice-button {
+      padding: 18px;
+      border-radius: 20px;
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-weight: 600;
+      min-height: 68px;
+      line-height: 1.5;
+    }
+
+    .choice-button.correct {
+      border-color: var(--success);
+    }
+
+    .choice-button.incorrect {
+      border-color: var(--error);
+      animation: choiceShake 0.28s ease-in-out 1;
+    }
+
+    @keyframes progressBonusFloat {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      20% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+
+    @keyframes choiceShake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      25% {
+        transform: translateX(-3px);
+      }
+      50% {
+        transform: translateX(3px);
+      }
+      75% {
+        transform: translateX(-2px);
+      }
+    }
+
+    .result {
+      min-height: 30px;
+      margin-top: 6px;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .helper-note {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin: 0;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .meta-card {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .meta-label {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .meta-value {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .result.success {
+      color: var(--success);
+    }
+
+    .result.error {
+      color: var(--error);
+    }
+
+    .profile-shell {
+      display: grid;
+      gap: 18px;
+    }
+
+    .profile-hero {
+      display: grid;
+      gap: 12px;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background:
+        radial-gradient(circle at top right, rgba(126, 196, 244, 0.18), transparent 32%),
+        linear-gradient(145deg, rgba(145, 167, 255, 0.12), rgba(127, 227, 179, 0.08)),
+        var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .profile-kicker {
+      margin: 0;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .profile-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .profile-summary {
+      display: grid;
+      gap: 10px;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+    }
+
+    .profile-copy {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 56ch;
+    }
+
+    .secondary-button {
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .settings-panel {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .settings-copy {
+      min-width: 0;
+    }
+
+    .settings-title {
+      margin: 0 0 4px;
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+
+    .settings-note {
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    .settings-select {
+      width: min(240px, 100%);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 58px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+
+    .toggle-switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.18s ease;
+    }
+
+    .toggle-switch.active {
+      background: rgba(127, 227, 179, 0.22);
+      border-color: rgba(127, 227, 179, 0.32);
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(23px);
+    }
+
+    .danger-button {
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(255, 140, 140, 0.14);
+      border: 1px solid rgba(255, 140, 140, 0.32);
+      color: var(--error);
+      font-weight: 700;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .stat-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .stat-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .stat-rate {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-values {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat-gauge {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+    }
+
+    .stat-gauge-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+    }
+
+    .stat-gauge-fill.correct {
+      left: 0;
+      background: linear-gradient(90deg, rgba(127, 227, 179, 0.75), rgba(127, 227, 179, 1));
+    }
+
+    .stat-gauge-fill.incorrect {
+      right: 0;
+      background: linear-gradient(90deg, rgba(255, 140, 140, 1), rgba(255, 140, 140, 0.75));
+    }
+
+    .stat-gauge-center {
+      position: absolute;
+      top: 1px;
+      bottom: 1px;
+      left: 50%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateX(-50%);
+    }
+
+    .stat-item {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--line);
+    }
+
+    .stat-label {
+      margin: 0 0 6px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .profile-empty {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(255, 255, 255, 0.14);
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .profile-actions {
+      display: flex;
+      justify-content: center;
+    }
+
+    @media (max-width: 780px) {
+      body {
+        padding: 18px 14px 116px;
+      }
+
+      #controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .app-header {
+        top: 12px;
+      }
+
+      .choices-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .app-header-study {
+        justify-items: stretch;
+      }
+
+      .header-study-switcher {
+        justify-content: flex-start;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-heading,
+      .settings-row {
+        align-items: stretch;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .card,
+      .controls-panel {
+        padding: 12px;
+      }
+
+      .controls-panel {
+        bottom: 12px;
+        width: calc(100vw - 16px);
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .app-header {
+        padding: 16px;
+      }
+
+      .header-badge {
+        min-height: 42px;
+        padding-inline: 14px;
+      }
+
+      .overlay-shell {
+        padding: 16px;
+      }
+
+      .overlay-panel {
+        padding: 18px;
+      }
+
+      .header-study-button {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 0.74rem;
+      }
+
+      .mode-button {
+        min-height: 64px;
+        padding: 10px 12px;
+      }
+
+      .mode-visual {
+        width: 24px;
+        height: 24px;
+      }
+
+      .mode-button .mode-title {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<svg class="background-grid" viewBox="0 0 1600 900" aria-hidden="true">
+  <defs>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#grid)"></rect>
+</svg>
+
+<section class="gate-shell" id="gateScreen">
+  <div class="gate-card panel">
+    <svg class="gate-visual" viewBox="0 0 80 80" aria-hidden="true">
+      <rect x="16" y="34" width="48" height="30" rx="10" fill="none" stroke="currentColor" stroke-width="2.5"></rect>
+      <path d="M28 34v-8c0-7.2 5.5-12 12-12s12 4.8 12 12v8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+      <circle cx="40" cy="48" r="4" fill="currentColor"></circle>
+    </svg>
+    <div>
+      <h1 class="gate-title">Vocabulary Quiz</h1>
+    </div>
+    <div class="version-panel">
+      <p class="version-heading">バージョン選択</p>
+      <div class="version-grid" id="versionSelector"></div>
+    </div>
+    <div class="gate-form">
+      <input id="accessCode" type="password" inputmode="numeric" placeholder="アクセスコードを入力">
+      <button class="primary-button" onclick="submitAccessCode()">開く</button>
+      <p class="gate-error" id="gateError"></p>
+    </div>
+  </div>
+</section>
+
+<main class="app-shell hidden" id="appShell">
+  <section class="app-header panel" id="appHeader"></section>
+  <section class="controls-panel panel">
+    <div id="controls"></div>
+  </section>
+
+  <section class="card panel" id="quiz"></section>
+</main>
+
+<div id="overlayRoot"></div>
+
+<script>
+const SHEET_CONFIG = {
+  sheetId: '18H5k3pF7ELIIcgnOBU-WCRdjQtzGgmKizcaWPcPDHlY',
+  gid: '0'
+};
+const PROFILE_COOKIE = 'voc_profile';
+const ACCESS_COOKIE = 'voc_access_granted';
+const SHEET_COOKIE = 'voc_sheet_version';
+
+const MODE_LABELS = {
+  definition_to_word: '定義→英単語',
+  word_to_japanese: '英単語→日本語',
+  japanese_to_word: '日本語→英単語',
+  my_page: 'マイページ'
+};
+
+const MODE_NOTES = {
+  definition_to_word: '意味と例文から英単語を思い出す',
+  word_to_japanese: '英単語を見て日本語を選ぶ',
+  japanese_to_word: '日本語から英単語を選ぶ'
+};
+
+const QUIZ_MODES = ['definition_to_word', 'word_to_japanese', 'japanese_to_word'];
+
+let entries = [];
+let accessCode = '';
+let mode = 'definition_to_word';
+let current = 0;
+let order = [];
+let profile = createDefaultProfile();
+let questionSession = null;
+let settingsOpen = false;
+let versionOverlayOpen = false;
+let overlaySheetKey = '';
+let overlayAccessCodeValue = '';
+let overlayAccessError = '';
+let overlayLoading = false;
+let overlayLoadedVersion = null;
+let sheetVersions = [];
+let currentSheetKey = '';
+let lastQuizMode = 'definition_to_word';
+let perfectProgressCount = 0;
+
+const controls = document.getElementById('controls');
+const gateScreen = document.getElementById('gateScreen');
+const appShell = document.getElementById('appShell');
+const appHeader = document.getElementById('appHeader');
+const overlayRoot = document.getElementById('overlayRoot');
+
+function getSheetVersion(key = currentSheetKey) {
+  return sheetVersions.find((version) => version.key === key) || sheetVersions[0] || null;
+}
+
+function getSheetConfigUrl() {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_CONFIG.sheetId}/gviz/tq?tqx=out:json&gid=${SHEET_CONFIG.gid}`;
+}
+
+function getSheetUrl(key = currentSheetKey) {
+  const version = getSheetVersion(key);
+  if (!version) {
+    throw new Error('Sheet version is not configured.');
+  }
+  return `https://docs.google.com/spreadsheets/d/${version.sheetId}/gviz/tq?tqx=out:json&gid=${version.gid}`;
+}
+
+function parseGoogleVisualizationResponse(text) {
+  const prefix = 'google.visualization.Query.setResponse(';
+  const start = text.indexOf(prefix);
+  const end = text.lastIndexOf(');');
+
+  if (start === -1 || end === -1) {
+    throw new Error('Unexpected Google Sheets response.');
+  }
+
+  return JSON.parse(text.slice(start + prefix.length, end));
+}
+
+function normalizeCell(cell) {
+  if (!cell) return '';
+  const value = cell.f ?? cell.v ?? '';
+  return String(value).trim();
+}
+
+function normalizeEntry(row) {
+  const cells = row.c ?? [];
+  const word = normalizeCell(cells[0]);
+  const jp = normalizeCell(cells[1]);
+  const def = normalizeCell(cells[2]);
+  const example = normalizeCell(cells[3]);
+
+  if (!word || !jp || !def) {
+    return null;
+  }
+
+  return { word, jp, def, example };
+}
+
+function slugifyVersionKey(text, fallbackIndex) {
+  const slug = String(text)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || `sheet-${fallbackIndex + 1}`;
+}
+
+function normalizeSheetVersion(row, index) {
+  const cells = row.c ?? [];
+  const label = normalizeCell(cells[0]);
+  const sheetId = normalizeCell(cells[1]);
+  const gid = normalizeCell(cells[2]) || '0';
+
+  if (!label || !sheetId) {
+    return null;
+  }
+
+  return {
+    key: slugifyVersionKey(label, index),
+    label,
+    note: '',
+    sheetId,
+    gid
+  };
+}
+
+async function loadSheetVersions() {
+  const response = await fetch(getSheetConfigUrl());
+
+  if (!response.ok) {
+    throw new Error(`Failed to load sheet config: ${response.status}`);
+  }
+
+  const text = await response.text();
+  const payload = parseGoogleVisualizationResponse(text);
+  const rows = payload.table?.rows ?? [];
+  const nextVersions = rows
+    .map(normalizeSheetVersion)
+    .filter(Boolean);
+
+  if (!nextVersions.length) {
+    throw new Error('No valid sheet versions found in config sheet.');
+  }
+
+  sheetVersions = nextVersions;
+}
+
+async function loadSheetDataForKey(key = currentSheetKey) {
+  const response = await fetch(getSheetUrl(key));
+
+  if (!response.ok) {
+    throw new Error(`Failed to load sheet data: ${response.status}`);
+  }
+
+  const text = await response.text();
+  const payload = parseGoogleVisualizationResponse(text);
+  const rows = payload.table?.rows ?? [];
+
+  if (!rows.length) {
+    throw new Error('No rows found in sheet.');
+  }
+
+  const nextAccessCode = rows
+    .map(row => normalizeCell(row.c?.[4]))
+    .find(Boolean) || '';
+
+  const nextEntries = rows
+    .map(normalizeEntry)
+    .filter(Boolean);
+
+  if (!nextEntries.length) {
+    throw new Error('No valid vocabulary rows found in sheet.');
+  }
+
+  if (!nextAccessCode) {
+    throw new Error('Access code not found in password column.');
+  }
+
+  return {
+    entries: nextEntries,
+    accessCode: nextAccessCode
+  };
+}
+
+async function loadSheetData() {
+  const payload = await loadSheetDataForKey();
+  entries = payload.entries;
+  accessCode = payload.accessCode;
+}
+
+function applyLoadedSheetState(nextKey, payload) {
+  currentSheetKey = nextKey;
+  accessCode = payload.accessCode;
+  entries = payload.entries;
+  current = 0;
+  perfectProgressCount = 0;
+  questionSession = null;
+  order = [...entries.keys()];
+  shuffle(order);
+}
+
+function createDefaultStats() {
+  return { attempted: 0, correct: 0 };
+}
+
+function createDefaultProfile() {
+  return {
+    name: 'Your Name',
+    keepLoggedIn: false,
+    autoFocusDefinitionAnswer: false,
+    stats: {
+      definition_to_word: createDefaultStats(),
+      word_to_japanese: createDefaultStats(),
+      japanese_to_word: createDefaultStats()
+    }
+  };
+}
+
+function setCookie(name, value, days = 365) {
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const prefix = `${name}=`;
+  const cookies = document.cookie ? document.cookie.split('; ') : [];
+  for (const cookie of cookies) {
+    if (cookie.startsWith(prefix)) {
+      return decodeURIComponent(cookie.slice(prefix.length));
+    }
+  }
+  return '';
+}
+
+function loadProfile() {
+  const raw = getCookie(PROFILE_COOKIE);
+  if (!raw) return createDefaultProfile();
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name.trim() : 'Your Name',
+      keepLoggedIn: Boolean(parsed.keepLoggedIn),
+      autoFocusDefinitionAnswer: Boolean(parsed.autoFocusDefinitionAnswer),
+      stats: {
+        definition_to_word: {
+          ...createDefaultStats(),
+          ...(parsed.stats?.definition_to_word || {})
+        },
+        word_to_japanese: {
+          ...createDefaultStats(),
+          ...(parsed.stats?.word_to_japanese || {})
+        },
+        japanese_to_word: {
+          ...createDefaultStats(),
+          ...(parsed.stats?.japanese_to_word || {})
+        }
+      }
+    };
+  } catch (error) {
+    console.warn('Failed to parse profile cookie.', error);
+    return createDefaultProfile();
+  }
+}
+
+function saveProfile() {
+  setCookie(PROFILE_COOKIE, JSON.stringify(profile));
+}
+
+function setAccessCookie(value, days = 30) {
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${ACCESS_COOKIE}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getAccessCookie() {
+  return getCookie(ACCESS_COOKIE);
+}
+
+function clearAccessCookie() {
+  document.cookie = `${ACCESS_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+}
+
+function saveSelectedSheet(key) {
+  setCookie(SHEET_COOKIE, key, 365);
+}
+
+function loadSelectedSheet() {
+  const saved = getCookie(SHEET_COOKIE);
+  return getSheetVersion(saved)?.key || sheetVersions[0]?.key || '';
+}
+
+function getCurrentVersionLabel() {
+  return getSheetVersion()?.label || '未設定';
+}
+
+function isCurrentSheetUnlocked() {
+  return getAccessCookie() === currentSheetKey;
+}
+
+function renderVersionSelector() {
+  const container = document.getElementById('versionSelector');
+  if (!container) return;
+
+  container.innerHTML = sheetVersions.map((version) => `
+    <button
+      class="version-button ${version.key === currentSheetKey ? 'active' : ''}"
+      type="button"
+      data-sheet-key="${version.key}"
+    >
+      <span class="version-button-title">${escapeHtml(version.label)}</span>
+      <span class="version-button-note">${escapeHtml(version.note)}</span>
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.version-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      switchSheetVersion(button.dataset.sheetKey || sheetVersions[0]?.key || '');
+    });
+  });
+}
+
+function ensureQuestionSession() {
+  if (!questionSession) {
+    questionSession = {
+      mode,
+      answered: false
+    };
+  }
+}
+
+function recordQuestionOutcome(isCorrectOnFirstTry) {
+  if (!QUIZ_MODES.includes(mode)) return;
+  ensureQuestionSession();
+  if (questionSession.answered) return;
+
+  const stats = profile.stats[mode];
+  stats.attempted += 1;
+  if (isCorrectOnFirstTry) {
+    stats.correct += 1;
+  }
+
+  questionSession.answered = true;
+  saveProfile();
+}
+
+function getAccuracy(stats) {
+  if (!stats.attempted) return '0%';
+  return `${Math.round((stats.correct / stats.attempted) * 100)}%`;
+}
+
+function getGaugeWidths(stats) {
+  if (!stats.attempted) {
+    return { correct: 0, incorrect: 0 };
+  }
+
+  const correct = (stats.correct / stats.attempted) * 100;
+  const incorrect = Math.max(0, 100 - correct);
+  return { correct, incorrect };
+}
+
+function getTotalStats() {
+  return QUIZ_MODES.reduce((acc, key) => {
+    acc.attempted += profile.stats[key].attempted;
+    acc.correct += profile.stats[key].correct;
+    return acc;
+  }, createDefaultStats());
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getMaskCandidates(word) {
+  const lower = word.toLowerCase();
+  const forms = new Set([lower]);
+
+  forms.add(`${lower}s`);
+  forms.add(`${lower}es`);
+  forms.add(`${lower}ed`);
+  forms.add(`${lower}ing`);
+
+  if (lower.endsWith('e')) {
+    forms.add(`${lower}d`);
+    forms.add(`${lower.slice(0, -1)}ing`);
+  }
+
+  if (lower.endsWith('y') && lower.length > 1) {
+    const stem = lower.slice(0, -1);
+    forms.add(`${stem}ies`);
+    forms.add(`${stem}ied`);
+    forms.add(`${stem}ying`);
+  }
+
+  if (/[sxz]$/.test(lower) || /(sh|ch)$/.test(lower)) {
+    forms.add(`${lower}es`);
+  }
+
+  return [...forms].sort((a, b) => b.length - a.length);
+}
+
+function maskWord(text, word) {
+  if (!text || !word) return text;
+  const variants = getMaskCandidates(word);
+
+  return text.replace(/[A-Za-z]+/g, (token) => {
+    const matched = variants.find((variant) => token.toLowerCase() === variant);
+    return matched ? '_'.repeat(token.length) : token;
+  });
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function getCurrentEntry() {
+  return entries[order[current]];
+}
+
+function getProgressWidth() {
+  if (!entries.length) return '0%';
+  return `${(perfectProgressCount / entries.length) * 100}%`;
+}
+
+function renderMetaCards(items) {
+  return `
+    <div class="meta-grid">
+      ${items.map(item => `
+        <div class="meta-card">
+          <p class="meta-label">${item.label}</p>
+          <p class="meta-value">${item.value}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function isStudyMode(targetMode = mode) {
+  return QUIZ_MODES.includes(targetMode);
+}
+
+function getStudyMode() {
+  return isStudyMode(mode) ? mode : lastQuizMode;
+}
+
+function getSectionLabel() {
+  return mode === 'my_page' ? 'Profile' : 'Study';
+}
+
+function getHeaderTitle() {
+  if (mode === 'my_page') {
+    return `${profile.name}さんのマイページ`;
+  }
+  return 'Vocabulary Quiz';
+}
+
+function renderHeaderStudySwitcher() {
+  return `
+    <div class="header-study-switcher">
+      ${QUIZ_MODES.map((key) => `
+        <button class="header-study-button ${getStudyMode() === key ? 'active' : ''}" onclick="setMode('${key}')">${MODE_LABELS[key]}</button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderVersionOverlay() {
+  if (!overlayRoot) return;
+
+  if (!versionOverlayOpen) {
+    overlayRoot.innerHTML = '';
+    return;
+  }
+
+  overlayRoot.innerHTML = `
+    <div class="overlay-shell" id="versionOverlayBackdrop">
+      <div class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="versionOverlayTitle">
+        <div class="overlay-head">
+          <div class="overlay-copy">
+            <p class="overlay-kicker">Version</p>
+            <h2 class="overlay-title" id="versionOverlayTitle">出題バージョンを選ぶ</h2>
+          </div>
+          <button class="overlay-close" id="closeVersionOverlay" type="button" aria-label="閉じる">×</button>
+        </div>
+        <div class="version-grid">
+          ${sheetVersions.map((version) => `
+            <button
+              class="version-button ${version.key === overlaySheetKey ? 'active' : ''}"
+              type="button"
+              data-overlay-sheet-key="${version.key}"
+              ${overlayLoading ? 'disabled' : ''}
+            >
+              <span class="version-button-title">${escapeHtml(version.label)}</span>
+              <span class="version-button-note">${escapeHtml(version.note)}</span>
+            </button>
+          `).join('')}
+        </div>
+        ${overlaySheetKey && overlaySheetKey !== currentSheetKey ? `
+          <div class="gate-form">
+            <input id="overlayAccessCode" type="password" inputmode="numeric" placeholder="アクセスコードを入力" value="${escapeHtml(overlayAccessCodeValue)}" ${overlayLoading ? 'disabled' : ''}>
+            <button class="primary-button" id="submitOverlayAccessCode" type="button" ${overlayLoading || !overlayLoadedVersion ? 'disabled' : ''}>このバージョンを開く</button>
+            <p class="gate-error" id="overlayAccessError">${escapeHtml(overlayLoading ? '読み込み中…' : overlayAccessError)}</p>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('closeVersionOverlay')?.addEventListener('click', closeVersionOverlay);
+  document.getElementById('versionOverlayBackdrop')?.addEventListener('click', (event) => {
+    if (event.target?.id === 'versionOverlayBackdrop') {
+      closeVersionOverlay();
+    }
+  });
+  overlayRoot.querySelectorAll('[data-overlay-sheet-key]').forEach((button) => {
+    button.addEventListener('click', () => {
+      selectOverlaySheetVersion(button.dataset.overlaySheetKey || sheetVersions[0]?.key || '');
+    });
+  });
+  document.getElementById('overlayAccessCode')?.addEventListener('input', (event) => {
+    overlayAccessCodeValue = event.target.value;
+    overlayAccessError = '';
+  });
+  document.getElementById('overlayAccessCode')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      submitOverlayAccessCode();
+    }
+  });
+  document.getElementById('submitOverlayAccessCode')?.addEventListener('click', submitOverlayAccessCode);
+}
+
+function renderHeader() {
+  appHeader.innerHTML = `
+    <div class="app-header-row">
+      <div class="app-header-copy">
+        <p class="app-header-kicker">${getSectionLabel()}</p>
+        <h1 class="app-header-title">${escapeHtml(getHeaderTitle())}</h1>
+      </div>
+      <div class="app-header-actions">
+        <button class="header-badge button-like" id="openVersionOverlay" type="button">
+          <span class="header-badge-label">Version</span>
+          <span>${escapeHtml(getCurrentVersionLabel())}</span>
+        </button>
+        ${mode === 'my_page' ? '' : `
+          <div class="app-header-study">
+            ${renderHeaderStudySwitcher()}
+          </div>
+        `}
+        ${mode === 'my_page' ? `
+          <button class="header-action icon-only" id="toggleSettings" aria-label="設定">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M19 8h10l1.7 4.7 4.8 2.1 4.6-1.8 5 8.7-3.4 3.6.4 5.2 4 3-5 8.7-5-1.5-4.5 2.6L29 40H19l-1.8-4.7-4.7-2.1-4.8 1.5-5-8.7 4-3 .4-5.2-3.4-3.6 5-8.7 4.6 1.8 4.8-2.1z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"></path>
+              <circle cx="24" cy="24" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"></circle>
+            </svg>
+          </button>
+        ` : ''}
+      </div>
+    </div>
+    ${mode === 'my_page' && settingsOpen ? `<div class="settings-drawer">${renderSettingsPanel()}</div>` : ''}
+  `;
+
+  document.getElementById('openVersionOverlay')?.addEventListener('click', openVersionOverlay);
+  document.getElementById('toggleSettings')?.addEventListener('click', toggleSettings);
+  document.getElementById('changeProfileName')?.addEventListener('click', updateProfileName);
+  document.getElementById('toggleKeepLoggedIn')?.addEventListener('click', toggleKeepLoggedIn);
+  document.getElementById('toggleAutoFocusDefinitionAnswer')?.addEventListener('click', toggleAutoFocusDefinitionAnswer);
+  document.getElementById('clearProfileData')?.addEventListener('click', clearProfileData);
+  renderVersionOverlay();
+}
+
+function openVersionOverlay() {
+  overlaySheetKey = currentSheetKey;
+  overlayAccessCodeValue = '';
+  overlayAccessError = '';
+  overlayLoading = false;
+  overlayLoadedVersion = null;
+  versionOverlayOpen = true;
+  renderVersionOverlay();
+}
+
+function closeVersionOverlay() {
+  versionOverlayOpen = false;
+  overlaySheetKey = currentSheetKey;
+  overlayAccessCodeValue = '';
+  overlayAccessError = '';
+  overlayLoading = false;
+  overlayLoadedVersion = null;
+  renderVersionOverlay();
+}
+
+async function selectOverlaySheetVersion(nextKey) {
+  const nextVersion = getSheetVersion(nextKey);
+  if (!nextVersion || overlayLoading) return;
+
+  overlaySheetKey = nextVersion.key;
+  overlayAccessCodeValue = '';
+  overlayAccessError = '';
+  overlayLoadedVersion = null;
+
+  if (nextVersion.key === currentSheetKey) {
+    renderVersionOverlay();
+    return;
+  }
+
+  overlayLoading = true;
+  renderVersionOverlay();
+
+  try {
+    const payload = await loadSheetDataForKey(nextVersion.key);
+    overlayLoadedVersion = {
+      key: nextVersion.key,
+      payload
+    };
+    overlayAccessError = '';
+
+    if (profile.keepLoggedIn && getAccessCookie() === nextVersion.key) {
+      applyLoadedSheetState(nextVersion.key, payload);
+      saveSelectedSheet(currentSheetKey);
+      renderVersionSelector();
+      renderHeader();
+      renderCurrentQuestion();
+      closeVersionOverlay();
+      return;
+    }
+  } catch (error) {
+    overlayAccessError = 'このバージョンを読み込めませんでした。';
+    console.warn('Failed to load question data for overlay version switch.', error);
+  } finally {
+    overlayLoading = false;
+    renderVersionOverlay();
+  }
+}
+
+function submitOverlayAccessCode() {
+  if (overlayLoading || !overlayLoadedVersion) return;
+
+  const input = document.getElementById('overlayAccessCode');
+  const code = (input?.value || overlayAccessCodeValue).trim();
+
+  if (!overlayLoadedVersion.payload.accessCode) {
+    overlayAccessError = 'アクセスコードを取得できませんでした。';
+    renderVersionOverlay();
+    return;
+  }
+
+  if (code !== overlayLoadedVersion.payload.accessCode) {
+    overlayAccessCodeValue = code;
+    overlayAccessError = 'アクセスコードが違います。';
+    renderVersionOverlay();
+    document.getElementById('overlayAccessCode')?.select();
+    return;
+  }
+
+  applyLoadedSheetState(overlayLoadedVersion.key, overlayLoadedVersion.payload);
+  saveSelectedSheet(currentSheetKey);
+  renderVersionSelector();
+
+  if (profile.keepLoggedIn) {
+    setAccessCookie(currentSheetKey);
+  } else {
+    clearAccessCookie();
+  }
+
+  renderHeader();
+  renderCurrentQuestion();
+  closeVersionOverlay();
+}
+
+function renderCard(label, promptTitle, promptText, body, metaItems = [], options = {}) {
+  const { hideLabel = false, emphasizePrompt = false } = options;
+  document.getElementById("quiz").innerHTML = `
+    <div class="quiz-card">
+      <div class="quiz-topbar">
+        <div class="quiz-chip-wrap">
+          <div class="quiz-chip"><strong>${MODE_LABELS[mode]}</strong></div>
+          <div class="quiz-chip">Question <strong>${current + 1}</strong> / ${entries.length}</div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bonus" id="progressBonus">+1</div>
+          <div class="progress" aria-hidden="true">
+            <div class="progress-bar" style="width: ${getProgressWidth()}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="prompt-block">
+        ${hideLabel ? '' : `<p class="prompt-label">${label}</p>`}
+        <p class="prompt-text ${emphasizePrompt ? 'prompt-text-emphasis' : ''}"><strong>${promptTitle}</strong>${promptText ? `<br>${promptText}` : ''}</p>
+      </div>
+      ${metaItems.length ? renderMetaCards(metaItems) : ''}
+      ${body}
+    </div>
+  `;
+}
+
+function renderLoadError(message) {
+  updateControls();
+  if (appHeader) {
+    renderHeader();
+  }
+  document.getElementById("quiz").innerHTML = `
+    <div class="quiz-card">
+      <div class="prompt-block">
+        <p class="prompt-label">Data Error</p>
+        <p class="prompt-text"><strong>シートを読み込めませんでした。</strong><br>${message}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderProfilePage() {
+  const total = getTotalStats();
+  document.getElementById("quiz").innerHTML = `
+    <div class="profile-shell">
+      <section class="profile-hero">
+        <p class="profile-kicker">My Page</p>
+        <div class="profile-summary">
+          <div class="profile-heading">
+            <h2 class="profile-name">${escapeHtml(profile.name)}</h2>
+            <button class="secondary-button" id="changeProfileNameInline">名前を変更</button>
+          </div>
+        </div>
+      </section>
+      <section class="stats-grid">
+        ${renderStatCard('トータル', total)}
+        ${QUIZ_MODES.map(key => renderStatCard(MODE_LABELS[key], profile.stats[key])).join('')}
+      </section>
+      <div class="profile-actions">
+        <button class="secondary-button" id="backToAccessScreen">アクセスコード入力画面に戻る</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('changeProfileNameInline')?.addEventListener('click', updateProfileName);
+  document.getElementById('backToAccessScreen')?.addEventListener('click', returnToAccessScreen);
+}
+
+function renderSettingsPanel() {
+  return `
+    <div class="settings-panel">
+      <div class="settings-row">
+        <div class="settings-copy">
+          <p class="settings-title">名前変更</p>
+        </div>
+        <button class="secondary-button" id="changeProfileName">変更</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-copy">
+          <p class="settings-title">ログインを維持</p>
+        </div>
+        <button class="toggle-switch ${profile.keepLoggedIn ? 'active' : ''}" id="toggleKeepLoggedIn" aria-label="ログインを維持"></button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-copy">
+          <p class="settings-title">定義→英単語の自動入力</p>
+        </div>
+        <button class="toggle-switch ${profile.autoFocusDefinitionAnswer ? 'active' : ''}" id="toggleAutoFocusDefinitionAnswer" aria-label="定義から英単語の入力欄を自動で有効にする"></button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-copy">
+          <p class="settings-title">データ削除</p>
+        </div>
+        <button class="danger-button" id="clearProfileData">削除</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderStatCard(title, stats) {
+  const gauge = getGaugeWidths(stats);
+  const incorrect = Math.max(0, stats.attempted - stats.correct);
+  return `
+    <article class="stat-card">
+      <div class="stat-head">
+        <h3 class="stat-title">${escapeHtml(title)}</h3>
+        <p class="stat-rate">${getAccuracy(stats)}</p>
+      </div>
+      <div class="stat-gauge" aria-hidden="true">
+        <div class="stat-gauge-fill correct" style="width: ${gauge.correct}%"></div>
+        <div class="stat-gauge-fill incorrect" style="width: ${gauge.incorrect}%"></div>
+        <div class="stat-gauge-center"></div>
+      </div>
+      <div class="stat-values">
+        <div class="stat-item">
+          <p class="stat-label">Correct</p>
+          <p class="stat-value">${stats.correct}</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-label">Incorrect</p>
+          <p class="stat-value">${incorrect}</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-label">Solved</p>
+          <p class="stat-value">${stats.attempted}</p>
+        </div>
+        <div class="stat-item">
+          <p class="stat-label">Remaining</p>
+          <p class="stat-value">${Math.max(0, entries.length - Math.min(entries.length, stats.attempted))}</p>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function updateProfileName() {
+  const nextName = window.prompt('表示名を入力してください。', profile.name);
+  if (nextName === null) return;
+  const trimmed = nextName.trim();
+  if (!trimmed) return;
+  profile.name = trimmed;
+  saveProfile();
+  if (mode === 'my_page') {
+    renderProfilePage();
+  }
+  renderHeader();
+}
+
+function toggleSettings() {
+  if (mode !== 'my_page') return;
+  settingsOpen = !settingsOpen;
+  renderHeader();
+}
+
+function toggleKeepLoggedIn() {
+  profile.keepLoggedIn = !profile.keepLoggedIn;
+  saveProfile();
+
+  if (profile.keepLoggedIn) {
+    setAccessCookie(currentSheetKey);
+  } else {
+    clearAccessCookie();
+  }
+
+  if (mode === 'my_page') {
+    renderProfilePage();
+  }
+  renderHeader();
+}
+
+function toggleAutoFocusDefinitionAnswer() {
+  profile.autoFocusDefinitionAnswer = !profile.autoFocusDefinitionAnswer;
+  saveProfile();
+
+  if (mode === 'my_page') {
+    renderProfilePage();
+  }
+  renderHeader();
+}
+
+function clearProfileData() {
+  const confirmed = window.confirm('名前、成績、ログイン状態を削除します。よろしいですか？');
+  if (!confirmed) return;
+
+  profile = createDefaultProfile();
+  settingsOpen = false;
+  clearAccessCookie();
+  document.cookie = `${PROFILE_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+
+  if (mode === 'my_page') {
+    renderProfilePage();
+  }
+  renderHeader();
+}
+
+function returnToAccessScreen() {
+  settingsOpen = false;
+  versionOverlayOpen = false;
+  renderVersionOverlay();
+  gateScreen.classList.remove('hidden');
+  appShell.classList.add('hidden');
+
+  const input = document.getElementById('accessCode');
+  const error = document.getElementById('gateError');
+
+  if (error) {
+    error.textContent = '';
+  }
+
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+}
+
+async function switchSheetVersion(nextKey) {
+  const nextVersion = getSheetVersion(nextKey);
+  if (!nextVersion) return;
+  if (nextVersion.key === currentSheetKey) {
+    closeVersionOverlay();
+    return;
+  }
+
+  currentSheetKey = nextVersion.key;
+  saveSelectedSheet(currentSheetKey);
+  versionOverlayOpen = false;
+  renderVersionSelector();
+  renderHeader();
+
+  const gateError = document.getElementById('gateError');
+  if (gateError) {
+    gateError.textContent = '';
+  }
+
+  try {
+    await loadSheetData();
+    current = 0;
+    questionSession = null;
+    order = [...entries.keys()];
+    shuffle(order);
+  } catch (error) {
+    entries = [];
+    accessCode = '';
+    console.warn('Failed to load question data after switching sheet.', error);
+  }
+
+  if (profile.keepLoggedIn && isCurrentSheetUnlocked() && entries.length && accessCode) {
+    unlockApp();
+    return;
+  }
+
+  if (appShell.classList.contains('hidden')) {
+    const input = document.getElementById('accessCode');
+    if (input) {
+      input.value = '';
+    }
+    return;
+  }
+
+  gateScreen.classList.remove('hidden');
+  appShell.classList.add('hidden');
+  if (mode === 'my_page') {
+    mode = lastQuizMode;
+  }
+}
+
+function updateControls() {
+  controls.innerHTML = `
+    <button class="mode-button ${isStudyMode() ? 'active' : ''}" onclick="setMode('${getStudyMode()}')">
+      <span class="mode-copy">
+        <span class="mode-title">学習</span>
+        <span class="mode-note">${MODE_LABELS[getStudyMode()]}</span>
+      </span>
+      <svg class="mode-visual" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="8" y="9" width="32" height="30" rx="8" fill="none" stroke="currentColor" stroke-width="2"></rect>
+        <path d="M15 19h18M15 25h14M15 31h10" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"></path>
+      </svg>
+    </button>
+    <button class="mode-button ${mode === 'my_page' ? 'active' : ''}" onclick="setMode('my_page')">
+      <span class="mode-copy">
+        <span class="mode-title">マイページ</span>
+        <span class="mode-note">成績とアカウント</span>
+      </span>
+      <svg class="mode-visual" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="16" r="7" fill="none" stroke="currentColor" stroke-width="2.6"></circle>
+        <path d="M11 38c2.5-6 8-10 13-10s10.5 4 13 10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path>
+      </svg>
+    </button>
+  `;
+}
+
+function markChoice(button, isCorrect) {
+  button.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+  if (!isCorrect) {
+    setTimeout(() => {
+      button.classList.remove('incorrect');
+    }, 900);
+  }
+}
+
+function showProgressBonus() {
+  const bonus = document.getElementById("progressBonus");
+  if (!bonus) return;
+  bonus.classList.remove("show");
+  void bonus.offsetWidth;
+  bonus.classList.add("show");
+}
+
+function handleCorrect(isPerfect = false) {
+  if (isPerfect) {
+    perfectProgressCount += 1;
+    showProgressBonus();
+  }
+  setTimeout(() => nextQuestion(), 500);
+}
+
+function nextQuestion() {
+  current += 1;
+  questionSession = null;
+
+  if (current >= order.length) {
+    order = [...entries.keys()];
+    shuffle(order);
+    current = 0;
+    perfectProgressCount = 0;
+  }
+
+  renderCurrentQuestion();
+}
+
+function getChoices(correct, pool) {
+  const uniquePool = pool.filter(Boolean);
+  const set = new Set([correct]);
+
+  while (set.size < Math.min(4, uniquePool.length)) {
+    set.add(uniquePool[Math.floor(Math.random() * uniquePool.length)]);
+  }
+
+  const choices = [...set];
+  shuffle(choices);
+  return choices;
+}
+
+function renderChoiceButtons(choices) {
+  return `
+    <div class="choices-grid">
+      ${choices.map(choice => `<button class="choice-button" data-choice="${escapeHtml(choice)}">${escapeHtml(choice)}</button>`).join('')}
+    </div>
+  `;
+}
+
+function bindChoiceButtons() {
+  document.querySelectorAll('.choice-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      checkChoice(button, button.dataset.choice || '');
+    });
+  });
+}
+
+function showDefinitionToWord() {
+  const entry = getCurrentEntry();
+  const maskedDefinition = maskWord(entry.def, entry.word);
+  const maskedExample = maskWord(entry.example, entry.word);
+
+  renderCard(
+    'Definition',
+    maskedDefinition,
+    maskedExample || 'この定義と例文に合う英単語を入力してください。',
+    `
+      <div class="answer-row">
+        <input id="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="英単語を入力">
+        <button class="primary-button" onclick="checkDefinitionToWord()">答え合わせ</button>
+      </div>
+      <div id="result" class="result"></div>
+    `
+  );
+
+  document.getElementById("answer").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      checkDefinitionToWord();
+    }
+  });
+
+  if (profile.autoFocusDefinitionAnswer) {
+    requestAnimationFrame(() => {
+      const answerInput = document.getElementById("answer");
+      if (!answerInput) return;
+      answerInput.focus();
+      answerInput.select();
+    });
+  }
+}
+
+function checkDefinitionToWord() {
+  ensureQuestionSession();
+  const user = document.getElementById("answer").value.trim().toLowerCase();
+  const correct = getCurrentEntry().word.toLowerCase();
+  const result = document.getElementById("result");
+
+  result.className = 'result';
+
+  if (user === correct) {
+    const isPerfect = !questionSession.answered;
+    recordQuestionOutcome(isPerfect);
+    result.textContent = '正解！';
+    result.classList.add('success');
+    handleCorrect(isPerfect);
+    return;
+  }
+
+  recordQuestionOutcome(false);
+  result.textContent = `不正解… ${getCurrentEntry().word}`;
+  result.classList.add('error');
+}
+
+function showWordToJapanese() {
+  const entry = getCurrentEntry();
+  const choices = getChoices(entry.jp, entries.map(item => item.jp));
+
+  renderCard(
+    'Word',
+    entry.word,
+    '',
+    renderChoiceButtons(choices),
+    [],
+    { hideLabel: true, emphasizePrompt: true }
+  );
+
+  bindChoiceButtons();
+}
+
+function showJapaneseToWord() {
+  const entry = getCurrentEntry();
+  const choices = getChoices(entry.word, entries.map(item => item.word));
+
+  renderCard(
+    'Japanese',
+    entry.jp,
+    '',
+    renderChoiceButtons(choices),
+    [],
+    { hideLabel: true, emphasizePrompt: true }
+  );
+
+  bindChoiceButtons();
+}
+
+function checkChoice(button, selected) {
+  ensureQuestionSession();
+  const entry = getCurrentEntry();
+  const correct = mode === 'word_to_japanese' ? entry.jp : entry.word;
+
+  if (selected === correct) {
+    const isPerfect = !questionSession.answered;
+    recordQuestionOutcome(isPerfect);
+    markChoice(button, true);
+    handleCorrect(isPerfect);
+  } else {
+    recordQuestionOutcome(false);
+    markChoice(button, false);
+  }
+}
+
+function renderCurrentQuestion() {
+  if (mode === 'my_page') {
+    renderProfilePage();
+    return;
+  }
+
+  if (!entries.length) {
+    renderLoadError('Google Sheets の単語データを読み込めていません。');
+    return;
+  }
+
+  if (mode === 'definition_to_word') {
+    showDefinitionToWord();
+    return;
+  }
+
+  if (mode === 'word_to_japanese') {
+    showWordToJapanese();
+    return;
+  }
+
+  showJapaneseToWord();
+}
+
+function setMode(nextMode) {
+  if (!entries.length && nextMode !== 'my_page') {
+    renderLoadError('Google Sheets の単語データを読み込めていません。');
+    return;
+  }
+
+  mode = nextMode;
+  if (isStudyMode(nextMode)) {
+    lastQuizMode = nextMode;
+  }
+  questionSession = null;
+  if (nextMode !== 'my_page') {
+    settingsOpen = false;
+  }
+  current = 0;
+  perfectProgressCount = 0;
+  if (QUIZ_MODES.includes(nextMode)) {
+    order = [...entries.keys()];
+    shuffle(order);
+  }
+  updateControls();
+  renderHeader();
+  renderCurrentQuestion();
+}
+
+function unlockApp() {
+  gateScreen.classList.add('hidden');
+  appShell.classList.remove('hidden');
+  setMode(mode);
+}
+
+function submitAccessCode() {
+  const input = document.getElementById('accessCode');
+  const error = document.getElementById('gateError');
+  const code = input.value.trim();
+
+  if (!accessCode) {
+    error.textContent = 'アクセスコードを取得できませんでした。パスワード列を確認してください。';
+    return;
+  }
+
+  if (code === accessCode) {
+    if (profile.keepLoggedIn) {
+      setAccessCookie(currentSheetKey);
+    } else {
+      clearAccessCookie();
+    }
+    error.textContent = '';
+    unlockApp();
+    return;
+  }
+
+  error.textContent = 'アクセスコードが違います。';
+  input.select();
+}
+
+// ===== 簡易テスト =====
+(function test() {
+  const sample = getChoices('a', ['a', 'b', 'c', 'd', 'e']);
+  console.assert(sample.includes('a'), 'choices must include correct');
+})();
+
+async function initializeApp() {
+  profile = loadProfile();
+  settingsOpen = false;
+  try {
+    await loadSheetVersions();
+  } catch (error) {
+    console.warn('Failed to load sheet version config.', error);
+    renderLoadError('管理用スプレッドシートからシート一覧を読み込めませんでした。');
+    return;
+  }
+
+  currentSheetKey = loadSelectedSheet();
+  renderVersionSelector();
+  try {
+    await loadSheetData();
+    console.info(`Loaded ${entries.length} rows from Google Sheets.`);
+  } catch (error) {
+    entries = [];
+    accessCode = '';
+    console.warn('Failed to load question data.', error);
+  }
+
+  if (profile.keepLoggedIn && isCurrentSheetUnlocked() && entries.length && accessCode) {
+    unlockApp();
+    return;
+  }
+
+  if (!profile.keepLoggedIn) {
+    clearAccessCookie();
+  }
+
+  document.getElementById('accessCode').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      submitAccessCode();
+    }
+  });
+}
+
+initializeApp();
+</script>
+
+</body>
+</html>
