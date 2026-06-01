@@ -2,8 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Vocabulary Quiz</title>
+  <meta name="theme-color" content="#0a84ff">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     :root {
       color-scheme: dark;
@@ -88,9 +94,20 @@
       font-family: "Noto Sans JP", "Noto Sans", "Hiragino Sans", "Yu Gothic UI", sans-serif;
       color: var(--text);
       background: var(--bg);
-      padding: 32px 20px 40px;
+      padding: calc(32px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
       overflow-x: hidden;
       transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    html {
+      touch-action: manipulation;
+      overscroll-behavior: none;
+    }
+
+    body {
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
     }
 
     .background-grid {
@@ -224,7 +241,7 @@
 
     .app-header {
       position: sticky;
-      top: 18px;
+      top: calc(18px + env(safe-area-inset-top));
       z-index: 6;
       display: grid;
       gap: 14px;
@@ -1047,11 +1064,11 @@
 
     @media (max-width: 780px) {
       body {
-        padding: 18px 14px 28px;
+        padding: calc(18px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
       }
 
       .app-header {
-        top: 12px;
+        top: calc(12px + env(safe-area-inset-top));
       }
 
       .choices-grid {
@@ -1173,6 +1190,36 @@ const appShell = document.getElementById('appShell');
 const appHeader = document.getElementById('appHeader');
 const overlayRoot = document.getElementById('overlayRoot');
 const systemThemeMedia = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+function setupNoZoomGestures() {
+  document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (event) => event.preventDefault(), { passive: false });
+
+  document.addEventListener('touchmove', (event) => {
+    if (event.touches && event.touches.length > 1) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((error) => {
+      console.warn('Service worker registration failed.', error);
+    });
+  });
+}
 
 function getSheetVersion(key = currentSheetKey) {
   return sheetVersions.find((version) => version.key === key) || sheetVersions[0] || null;
@@ -1347,7 +1394,7 @@ function applyLoadedSheetState(nextKey, payload) {
 }
 
 function createDefaultStats() {
-  return { attempted: 0, correct: 0 };
+  return { attempted: 0, correct: 0, timeMsTotal: 0, timeCount: 0 };
 }
 
 function createDefaultProfile() {
@@ -1356,6 +1403,7 @@ function createDefaultProfile() {
       followSystem: true,
       darkMode: true
     },
+    revealFirstLetterHint: false,
     autoFocusDefinitionAnswer: false,
     allModeSettings: {
       selectAll: true,
@@ -1396,6 +1444,7 @@ function loadProfile() {
         followSystem: parsed.theme?.followSystem !== false,
         darkMode: parsed.theme?.darkMode !== false
       },
+      revealFirstLetterHint: Boolean(parsed.revealFirstLetterHint),
       autoFocusDefinitionAnswer: Boolean(parsed.autoFocusDefinitionAnswer),
       allModeSettings: {
         selectAll: parsed.allModeSettings?.selectAll !== false,
@@ -1547,6 +1596,14 @@ function recordQuestionOutcome(isCorrectOnFirstTry) {
     stats.correct += 1;
   }
 
+  const elapsedMs = typeof questionSession.startedAt === 'number'
+    ? Math.max(0, Math.round(performance.now() - questionSession.startedAt))
+    : null;
+  if (elapsedMs !== null) {
+    stats.timeMsTotal = (stats.timeMsTotal || 0) + elapsedMs;
+    stats.timeCount = (stats.timeCount || 0) + 1;
+  }
+
   questionSession.answered = true;
   saveProfile();
 }
@@ -1566,10 +1623,21 @@ function getGaugeWidths(stats) {
   return { correct, incorrect };
 }
 
+function formatAverageTime(stats) {
+  const total = Number(stats.timeMsTotal || 0);
+  const count = Number(stats.timeCount || 0);
+  if (!count || !Number.isFinite(total)) return '-';
+  const seconds = total / count / 1000;
+  if (!Number.isFinite(seconds)) return '-';
+  return `${seconds.toFixed(1)}s`;
+}
+
 function getTotalStats() {
   return QUIZ_MODES.reduce((acc, key) => {
     acc.attempted += profile.stats[key].attempted;
     acc.correct += profile.stats[key].correct;
+    acc.timeMsTotal += profile.stats[key].timeMsTotal || 0;
+    acc.timeCount += profile.stats[key].timeCount || 0;
     return acc;
   }, createDefaultStats());
 }
@@ -1619,8 +1687,12 @@ function maskWord(text, word) {
 
   return escapeHtml(text).replace(/[A-Za-z]+/g, (token) => {
     const matched = variants.find((variant) => token.toLowerCase() === variant);
+    const shouldRevealFirstLetter = Boolean(profile?.revealFirstLetterHint);
+    const maskedText = shouldRevealFirstLetter
+      ? `${token.slice(0, 1)}${'_'.repeat(Math.max(0, token.length - 1))}`
+      : '_'.repeat(token.length);
     return matched
-      ? `<span class="masked-answer" data-answer="${escapeHtml(token)}">${'_'.repeat(token.length)}</span>`
+      ? `<span class="masked-answer" data-answer="${escapeHtml(token)}">${maskedText}</span>`
       : token;
   });
 }
@@ -1860,6 +1932,7 @@ function renderHeader() {
   document.getElementById('toggleFollowSystemTheme')?.addEventListener('click', toggleFollowSystemTheme);
   document.getElementById('openAllModeRangeOverlay')?.addEventListener('click', openAllModeRangeOverlay);
   document.getElementById('toggleAutoFocusDefinitionAnswer')?.addEventListener('click', toggleAutoFocusDefinitionAnswer);
+  document.getElementById('toggleRevealFirstLetterHint')?.addEventListener('click', toggleRevealFirstLetterHint);
   document.getElementById('clearProfileData')?.addEventListener('click', clearProfileData);
   renderVersionOverlay();
 }
@@ -2048,6 +2121,12 @@ function renderSettingsPanel() {
       </div>
       <div class="settings-row">
         <div class="settings-copy">
+          <p class="settings-title">Reveal First Letter Hint</p>
+        </div>
+        <button class="toggle-switch ${profile.revealFirstLetterHint ? 'active' : ''}" id="toggleRevealFirstLetterHint" aria-label="Reveal the first letter for Definition to Word"></button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-copy">
           <p class="settings-title">ALL Range</p>
           <p class="settings-note">${escapeHtml(getAllModeSummary())}</p>
         </div>
@@ -2091,8 +2170,8 @@ function renderStatCard(title, stats) {
           <p class="stat-value">${stats.attempted}</p>
         </div>
         <div class="stat-item">
-          <p class="stat-label">Remaining</p>
-          <p class="stat-value">${Math.max(0, entries.length - Math.min(entries.length, stats.attempted))}</p>
+          <p class="stat-label">Avg time</p>
+          <p class="stat-value">${formatAverageTime(stats)}</p>
         </div>
       </div>
     </article>
@@ -2132,6 +2211,15 @@ function toggleAutoFocusDefinitionAnswer() {
     renderProfilePage();
   }
   renderHeader();
+}
+
+function toggleRevealFirstLetterHint() {
+  profile.revealFirstLetterHint = !profile.revealFirstLetterHint;
+  saveProfile();
+  renderHeader();
+  if (mode === 'definition_to_word') {
+    renderCurrentQuestion();
+  }
 }
 
 async function clearProfileData() {
@@ -2269,7 +2357,7 @@ function showDefinitionToWord() {
     maskedExample || 'Type the English word that matches this definition and example.',
     `
       <div class="answer-row">
-        <input id="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the word (space to skip)">
+        <input id="answer" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the base form (space to skip)">
         <button class="answer-submit" type="button" onclick="checkDefinitionToWord()" aria-label="Submit">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 18V6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
@@ -2277,10 +2365,13 @@ function showDefinitionToWord() {
           </svg>
         </button>
       </div>
-    `
+    `,
+    [],
+    { hideLabel: true }
   );
 
-  document.getElementById("answer").addEventListener("keydown", (event) => {
+  const answerInput = document.getElementById("answer");
+  answerInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       checkDefinitionToWord();
     }
@@ -2288,10 +2379,10 @@ function showDefinitionToWord() {
 
   if (profile.autoFocusDefinitionAnswer) {
     requestAnimationFrame(() => {
-      const answerInput = document.getElementById("answer");
-      if (!answerInput) return;
-      answerInput.focus();
-      answerInput.select();
+      const input = document.getElementById("answer");
+      if (!input) return;
+      input.focus();
+      input.select();
     });
   }
 }
@@ -2387,6 +2478,18 @@ function renderCurrentQuestion() {
     return;
   }
 
+  if (isStudyMode(mode)) {
+    if (!questionSession || questionSession.mode !== mode) {
+      questionSession = {
+        mode,
+        answered: false,
+        startedAt: performance.now()
+      };
+    } else if (typeof questionSession.startedAt !== 'number') {
+      questionSession.startedAt = performance.now();
+    }
+  }
+
   if (mode === 'definition_to_word') {
     showDefinitionToWord();
     return;
@@ -2441,6 +2544,9 @@ function handleSystemThemeChange() {
 })();
 
 async function initializeApp() {
+  setupNoZoomGestures();
+  registerServiceWorker();
+
   profile = loadProfile();
   settingsOpen = false;
   applyTheme();
