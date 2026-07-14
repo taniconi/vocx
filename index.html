@@ -194,6 +194,16 @@
     .version-grid {
       display: grid;
       gap: 10px;
+      max-height: min(62dvh, 520px);
+      overflow-y: auto;
+      padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .version-option {
+      display: grid;
+      gap: 10px;
     }
 
     .version-button {
@@ -229,6 +239,88 @@
       color: var(--text-muted);
       font-size: 0.88rem;
       line-height: 1.5;
+    }
+
+    .all-range-panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--drawer-bg);
+    }
+
+    .all-range-message {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .unit-range-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .unit-range-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .unit-range-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .unit-range-title {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .unit-range-count {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .unit-range-control {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .unit-range-slider {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .unit-range-dial {
+      width: 72px;
+      min-height: 36px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg-elevated);
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .unit-range-label {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
     .gate-error {
@@ -414,10 +506,12 @@
       padding: 24px;
       background: var(--overlay-bg);
       backdrop-filter: blur(12px);
+      overflow-y: auto;
     }
 
     .overlay-panel {
       width: min(560px, 100%);
+      max-height: calc(100dvh - 48px);
       padding: 22px;
       border-radius: var(--radius-xl);
       background: var(--overlay-panel-bg);
@@ -425,6 +519,8 @@
       box-shadow: var(--overlay-shadow);
       display: grid;
       gap: 16px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .overlay-head {
@@ -884,6 +980,11 @@
     .range-option-list {
       display: grid;
       gap: 10px;
+      max-height: min(62dvh, 520px);
+      overflow-y: auto;
+      padding-right: 4px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .range-option {
@@ -1117,6 +1218,7 @@
 
       .overlay-panel {
         padding: 18px;
+        max-height: calc(100dvh - 32px);
       }
 
       .header-study-button {
@@ -1176,15 +1278,15 @@ let profile = createDefaultProfile();
 let questionSession = null;
 let settingsOpen = false;
 let versionOverlayOpen = false;
-let allModeRangeOverlayOpen = false;
 let overlaySheetKey = '';
 let overlayLoading = false;
 let sheetVersions = [];
 let currentSheetKey = '';
 let lastQuizMode = 'japanese_to_word';
 let perfectProgressCount = 0;
-let draftAllModeSelectAll = true;
-let draftAllModeSelectedKeys = [];
+let draftAllModeRanges = {};
+let allModeRangeEntriesByKey = {};
+let allModeRangeLoading = false;
 
 const appShell = document.getElementById('appShell');
 const appHeader = document.getElementById('appHeader');
@@ -1338,7 +1440,13 @@ async function loadSheetDataForKey(key = currentSheetKey) {
     }
 
     const payloads = await Promise.all(
-      versions.map((version) => loadSheetDataForKey(version.key))
+      versions.map(async (version) => {
+        const payload = await loadSheetDataForKey(version.key);
+        const range = getAllModeRangeForKey(version.key, payload.entries.length);
+        return {
+          entries: payload.entries.slice(range.start - 1, range.end)
+        };
+      })
     );
 
     const nextEntries = payloads.flatMap((payload) => payload.entries);
@@ -1407,7 +1515,8 @@ function createDefaultProfile() {
     autoFocusDefinitionAnswer: false,
     allModeSettings: {
       selectAll: true,
-      selectedKeys: []
+      selectedKeys: [],
+      ranges: {}
     },
     stats: {
       definition_to_word: createDefaultStats(),
@@ -1450,7 +1559,10 @@ function loadProfile() {
         selectAll: parsed.allModeSettings?.selectAll !== false,
         selectedKeys: Array.isArray(parsed.allModeSettings?.selectedKeys)
           ? parsed.allModeSettings.selectedKeys.filter((key) => typeof key === 'string')
-          : []
+          : [],
+        ranges: parsed.allModeSettings?.ranges && typeof parsed.allModeSettings.ranges === 'object'
+          ? parsed.allModeSettings.ranges
+          : {}
       },
       stats: {
         definition_to_word: {
@@ -1497,45 +1609,50 @@ function getAllModeSettings() {
   const stored = profile.allModeSettings || createDefaultProfile().allModeSettings;
   const validKeys = new Set(getRealSheetVersions().map((version) => version.key));
   const selectedKeys = (stored.selectedKeys || []).filter((key) => validKeys.has(key));
+  const ranges = {};
+
+  if (stored.ranges && typeof stored.ranges === 'object') {
+    Object.entries(stored.ranges).forEach(([key, range]) => {
+      if (validKeys.has(key) && range && typeof range === 'object') {
+        ranges[key] = {
+          start: Number.parseInt(range.start, 10),
+          end: Number.parseInt(range.end, 10)
+        };
+      }
+    });
+  }
 
   return {
     selectAll: stored.selectAll !== false,
-    selectedKeys
+    selectedKeys,
+    ranges
   };
 }
 
 function getEffectiveAllModeKeys() {
   const versions = getRealSheetVersions();
-  const settings = getAllModeSettings();
-
-  if (settings.selectAll) {
-    return versions.map((version) => version.key);
-  }
-
-  if (settings.selectedKeys.length) {
-    return settings.selectedKeys;
-  }
-
-  return versions[0] ? [versions[0].key] : [];
+  return versions.map((version) => version.key);
 }
 
-function getAllModeSummary() {
-  const versions = getRealSheetVersions();
+function normalizeAllModeRange(range, count) {
+  const max = Math.max(1, count);
+  const rawStart = Number.parseInt(range?.start, 10);
+  const rawEnd = Number.parseInt(range?.end, 10);
+  const start = Math.min(Math.max(Number.isFinite(rawStart) ? rawStart : 1, 1), max);
+  const end = Math.min(Math.max(Number.isFinite(rawEnd) ? rawEnd : max, 1), max);
+
+  return start <= end
+    ? { start, end }
+    : { start: end, end: start };
+}
+
+function getAllModeRangeForKey(key, count) {
   const settings = getAllModeSettings();
+  return normalizeAllModeRange(settings.ranges[key], count);
+}
 
-  if (settings.selectAll) {
-    return 'All';
-  }
-
-  const selectedLabels = versions
-    .filter((version) => settings.selectedKeys.includes(version.key))
-    .map((version) => version.label);
-
-  if (!selectedLabels.length) {
-    return 'None selected';
-  }
-
-  return selectedLabels.join(', ');
+function getDraftAllModeRangeForKey(key, count) {
+  return normalizeAllModeRange(draftAllModeRanges[key], count);
 }
 
 function saveSelectedSheet(key) {
@@ -1805,70 +1922,78 @@ function renderHeaderStudySwitcher() {
   `;
 }
 
+function renderAllModeRangePanel() {
+  const versions = getRealSheetVersions();
+
+  if (allModeRangeLoading) {
+    return `
+      <div class="all-range-panel">
+        <p class="all-range-message">Loading Unit ranges...</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="all-range-panel">
+      ${versions.length ? `
+        <div class="unit-range-list">
+          ${versions.map((version) => {
+            const payload = allModeRangeEntriesByKey[version.key];
+            const count = payload?.entries?.length || 0;
+
+            if (payload?.error) {
+              return `
+                <div class="unit-range-card">
+                  <div class="unit-range-head">
+                    <p class="unit-range-title">${escapeHtml(version.label)}</p>
+                    <p class="unit-range-count">Load failed</p>
+                  </div>
+                </div>
+              `;
+            }
+
+            if (!count) {
+              return `
+                <div class="unit-range-card">
+                  <div class="unit-range-head">
+                    <p class="unit-range-title">${escapeHtml(version.label)}</p>
+                    <p class="unit-range-count">No rows</p>
+                  </div>
+                </div>
+              `;
+            }
+
+            const range = getDraftAllModeRangeForKey(version.key, count);
+            return `
+              <div class="unit-range-card">
+                <div class="unit-range-head">
+                  <p class="unit-range-title">${escapeHtml(version.label)}</p>
+                  <p class="unit-range-count" data-all-range-count-key="${escapeHtml(version.key)}">${range.start}-${range.end} / ${count}</p>
+                </div>
+                <label class="unit-range-label" for="rangeStart-${escapeHtml(version.key)}">Start</label>
+                <div class="unit-range-control">
+                  <input class="unit-range-slider" id="rangeStart-${escapeHtml(version.key)}" type="range" min="1" max="${count}" value="${range.start}" data-all-range-key="${escapeHtml(version.key)}" data-all-range-edge="start">
+                  <input class="unit-range-dial" type="number" inputmode="numeric" min="1" max="${count}" value="${range.start}" data-all-range-key="${escapeHtml(version.key)}" data-all-range-edge="start" aria-label="${escapeHtml(version.label)} start">
+                </div>
+                <label class="unit-range-label" for="rangeEnd-${escapeHtml(version.key)}">End</label>
+                <div class="unit-range-control">
+                  <input class="unit-range-slider" id="rangeEnd-${escapeHtml(version.key)}" type="range" min="1" max="${count}" value="${range.end}" data-all-range-key="${escapeHtml(version.key)}" data-all-range-edge="end">
+                  <input class="unit-range-dial" type="number" inputmode="numeric" min="1" max="${count}" value="${range.end}" data-all-range-key="${escapeHtml(version.key)}" data-all-range-edge="end" aria-label="${escapeHtml(version.label)} end">
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : '<p class="all-range-message">No Units available.</p>'}
+    </div>
+  `;
+}
+
 function renderVersionOverlay() {
   if (!overlayRoot) return;
 
-  if (!versionOverlayOpen && !allModeRangeOverlayOpen) {
+  if (!versionOverlayOpen) {
     overlayRoot.innerHTML = '';
-    return;
-  }
-
-  if (allModeRangeOverlayOpen) {
-    const selectableVersions = getRealSheetVersions();
-    const canSave = draftAllModeSelectAll || draftAllModeSelectedKeys.length > 0;
-
-    overlayRoot.innerHTML = `
-      <div class="overlay-shell" id="allModeRangeOverlayBackdrop">
-        <div class="overlay-panel" role="dialog" aria-modal="true" aria-labelledby="allModeRangeOverlayTitle">
-          <div class="overlay-head">
-            <div class="overlay-copy">
-              <h2 class="overlay-title" id="allModeRangeOverlayTitle">ALL Range</h2>
-            </div>
-            <button class="overlay-close" id="closeAllModeRangeOverlay" type="button" aria-label="Close">×</button>
-          </div>
-          <div class="range-option-list">
-            <button class="range-option ${draftAllModeSelectAll ? 'selected' : ''}" type="button" id="toggleAllModeSelectAll">
-              <div class="range-option-copy">
-                <p class="range-option-title">All</p>
-              </div>
-              <span class="range-check" aria-hidden="true"></span>
-            </button>
-            ${selectableVersions.map((version) => `
-              <button
-                class="range-option ${draftAllModeSelectedKeys.includes(version.key) ? 'selected' : ''} ${draftAllModeSelectAll ? 'disabled' : ''}"
-                type="button"
-                data-all-mode-key="${version.key}"
-                ${draftAllModeSelectAll ? 'disabled' : ''}
-              >
-                <div class="range-option-copy">
-                  <p class="range-option-title">${escapeHtml(version.label)}</p>
-                </div>
-                <span class="range-check" aria-hidden="true"></span>
-              </button>
-            `).join('')}
-          </div>
-          <div class="overlay-actions">
-            <button class="secondary-button" id="cancelAllModeRangeSelection" type="button">Cancel</button>
-            <button class="primary-button" id="saveAllModeRangeSelection" type="button" ${canSave ? '' : 'disabled'}>Save</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('closeAllModeRangeOverlay')?.addEventListener('click', closeAllModeRangeOverlay);
-    document.getElementById('cancelAllModeRangeSelection')?.addEventListener('click', closeAllModeRangeOverlay);
-    document.getElementById('allModeRangeOverlayBackdrop')?.addEventListener('click', (event) => {
-      if (event.target?.id === 'allModeRangeOverlayBackdrop') {
-        closeAllModeRangeOverlay();
-      }
-    });
-    document.getElementById('toggleAllModeSelectAll')?.addEventListener('click', toggleDraftAllModeSelectAll);
-    overlayRoot.querySelectorAll('[data-all-mode-key]').forEach((button) => {
-      button.addEventListener('click', () => {
-        toggleDraftAllModeVersion(button.dataset.allModeKey || '');
-      });
-    });
-    document.getElementById('saveAllModeRangeSelection')?.addEventListener('click', applyAllModeRangeSelection);
     return;
   }
 
@@ -1883,17 +2008,26 @@ function renderVersionOverlay() {
         </div>
         <div class="version-grid">
           ${sheetVersions.map((version) => `
-            <button
-              class="version-button ${version.key === overlaySheetKey ? 'active' : ''}"
-              type="button"
-              data-overlay-sheet-key="${version.key}"
-              ${overlayLoading ? 'disabled' : ''}
-            >
-              <span class="version-button-title">${escapeHtml(version.label)}</span>
-              <span class="version-button-note">${escapeHtml(version.note)}</span>
-            </button>
+            <div class="version-option">
+              <button
+                class="version-button ${version.key === overlaySheetKey ? 'active' : ''}"
+                type="button"
+                data-overlay-sheet-key="${version.key}"
+                ${overlayLoading ? 'disabled' : ''}
+              >
+                <span class="version-button-title">${escapeHtml(version.label)}</span>
+                <span class="version-button-note">${escapeHtml(version.note)}</span>
+              </button>
+              ${version.key === ALL_SHEETS_KEY && overlaySheetKey === ALL_SHEETS_KEY ? renderAllModeRangePanel() : ''}
+            </div>
           `).join('')}
         </div>
+        ${overlaySheetKey === ALL_SHEETS_KEY ? `
+          <div class="overlay-actions">
+            <button class="secondary-button" id="cancelAllModeRangeSelection" type="button">Cancel</button>
+            <button class="primary-button" id="saveAllModeRangeSelection" type="button" ${allModeRangeLoading || overlayLoading ? 'disabled' : ''}>Start ALL</button>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -1909,6 +2043,17 @@ function renderVersionOverlay() {
       selectOverlaySheetVersion(button.dataset.overlaySheetKey || sheetVersions[0]?.key || '');
     });
   });
+  overlayRoot.querySelectorAll('[data-all-range-key]').forEach((input) => {
+    input.addEventListener('input', () => {
+      updateDraftAllModeRange(
+        input.dataset.allRangeKey || '',
+        input.dataset.allRangeEdge || '',
+        input.value
+      );
+    });
+  });
+  document.getElementById('cancelAllModeRangeSelection')?.addEventListener('click', closeVersionOverlay);
+  document.getElementById('saveAllModeRangeSelection')?.addEventListener('click', applyAllModeRangeSelection);
 }
 
 function renderHeader() {
@@ -1930,7 +2075,6 @@ function renderHeader() {
   document.getElementById('toggleSettings')?.addEventListener('click', toggleSettings);
   document.getElementById('toggleDarkMode')?.addEventListener('click', toggleDarkMode);
   document.getElementById('toggleFollowSystemTheme')?.addEventListener('click', toggleFollowSystemTheme);
-  document.getElementById('openAllModeRangeOverlay')?.addEventListener('click', openAllModeRangeOverlay);
   document.getElementById('toggleAutoFocusDefinitionAnswer')?.addEventListener('click', toggleAutoFocusDefinitionAnswer);
   document.getElementById('toggleRevealFirstLetterHint')?.addEventListener('click', toggleRevealFirstLetterHint);
   document.getElementById('clearProfileData')?.addEventListener('click', clearProfileData);
@@ -1939,10 +2083,14 @@ function renderHeader() {
 
 function openVersionOverlay() {
   overlaySheetKey = currentSheetKey;
-  allModeRangeOverlayOpen = false;
+  draftAllModeRanges = { ...getAllModeSettings().ranges };
   overlayLoading = false;
   versionOverlayOpen = true;
   renderVersionOverlay();
+
+  if (overlaySheetKey === ALL_SHEETS_KEY) {
+    ensureAllModeRangeEntries();
+  }
 }
 
 function closeVersionOverlay() {
@@ -1952,63 +2100,99 @@ function closeVersionOverlay() {
   renderVersionOverlay();
 }
 
-function openAllModeRangeOverlay() {
-  const settings = getAllModeSettings();
-  draftAllModeSelectAll = settings.selectAll;
-  draftAllModeSelectedKeys = [...settings.selectedKeys];
-  versionOverlayOpen = false;
-  allModeRangeOverlayOpen = true;
+async function ensureAllModeRangeEntries() {
+  const missingVersions = getRealSheetVersions().filter((version) => !allModeRangeEntriesByKey[version.key]);
+  if (!missingVersions.length || allModeRangeLoading) return;
+
+  allModeRangeLoading = true;
+  renderVersionOverlay();
+
+  const results = await Promise.allSettled(
+    missingVersions.map(async (version) => ({
+      key: version.key,
+      payload: await loadSheetDataForKey(version.key)
+    }))
+  );
+
+  results.forEach((result, index) => {
+    const version = missingVersions[index];
+    if (result.status === 'fulfilled') {
+      allModeRangeEntriesByKey[version.key] = result.value.payload;
+      return;
+    }
+
+    allModeRangeEntriesByKey[version.key] = {
+      entries: [],
+      error: result.reason
+    };
+  });
+
+  allModeRangeLoading = false;
   renderVersionOverlay();
 }
 
-function closeAllModeRangeOverlay() {
-  allModeRangeOverlayOpen = false;
-  renderVersionOverlay();
-}
+function updateDraftAllModeRange(key, edge, value) {
+  const count = allModeRangeEntriesByKey[key]?.entries?.length || 0;
+  if (!key || !count || !['start', 'end'].includes(edge)) return;
 
-function toggleDraftAllModeSelectAll() {
-  draftAllModeSelectAll = !draftAllModeSelectAll;
-  renderVersionOverlay();
-}
+  const currentRange = getDraftAllModeRangeForKey(key, count);
+  const nextValue = Math.min(Math.max(Number.parseInt(value, 10) || 1, 1), count);
+  const nextRange = { ...currentRange, [edge]: nextValue };
 
-function toggleDraftAllModeVersion(key) {
-  if (!key || draftAllModeSelectAll) return;
-
-  if (draftAllModeSelectedKeys.includes(key)) {
-    draftAllModeSelectedKeys = draftAllModeSelectedKeys.filter((item) => item !== key);
-  } else {
-    draftAllModeSelectedKeys = [...draftAllModeSelectedKeys, key];
+  if (edge === 'start' && nextRange.start > nextRange.end) {
+    nextRange.end = nextRange.start;
+  }
+  if (edge === 'end' && nextRange.end < nextRange.start) {
+    nextRange.start = nextRange.end;
   }
 
-  renderVersionOverlay();
+  draftAllModeRanges = {
+    ...draftAllModeRanges,
+    [key]: nextRange
+  };
+
+  overlayRoot.querySelectorAll('[data-all-range-key]').forEach((input) => {
+    if (input.dataset.allRangeKey !== key) return;
+
+    if (input.dataset.allRangeEdge === 'start') {
+      input.value = nextRange.start;
+    }
+    if (input.dataset.allRangeEdge === 'end') {
+      input.value = nextRange.end;
+    }
+  });
+
+  const countLabel = [...overlayRoot.querySelectorAll('[data-all-range-count-key]')]
+    .find((label) => label.dataset.allRangeCountKey === key);
+  if (countLabel) {
+    countLabel.textContent = `${nextRange.start}-${nextRange.end} / ${count}`;
+  }
 }
 
 async function applyAllModeRangeSelection() {
-  if (!draftAllModeSelectAll && !draftAllModeSelectedKeys.length) return;
-
   profile.allModeSettings = {
-    selectAll: draftAllModeSelectAll,
-    selectedKeys: draftAllModeSelectAll ? [] : [...draftAllModeSelectedKeys]
+    selectAll: true,
+    selectedKeys: [],
+    ranges: { ...draftAllModeRanges }
   };
   saveProfile();
-  allModeRangeOverlayOpen = false;
+  overlayLoading = true;
   renderHeader();
 
-  if (currentSheetKey !== ALL_SHEETS_KEY) {
-    renderVersionOverlay();
-    return;
-  }
-
   try {
-    await loadSheetData();
-    current = 0;
-    questionSession = null;
-    perfectProgressCount = 0;
-    order = [...entries.keys()];
-    shuffle(order);
+    const payload = await loadSheetDataForKey(ALL_SHEETS_KEY);
+    applyLoadedSheetState(ALL_SHEETS_KEY, payload);
+    saveSelectedSheet(currentSheetKey);
+    renderVersionSelector();
+    renderHeader();
+    renderCurrentQuestion();
+    closeVersionOverlay();
+    return;
   } catch (error) {
     entries = [];
     console.warn('Failed to reload ALL mode data after updating range selection.', error);
+  } finally {
+    overlayLoading = false;
   }
 
   renderCurrentQuestion();
@@ -2020,6 +2204,13 @@ async function selectOverlaySheetVersion(nextKey) {
   if (!nextVersion || overlayLoading) return;
 
   overlaySheetKey = nextVersion.key;
+
+  if (nextVersion.key === ALL_SHEETS_KEY) {
+    draftAllModeRanges = { ...getAllModeSettings().ranges };
+    renderVersionOverlay();
+    ensureAllModeRangeEntries();
+    return;
+  }
 
   if (nextVersion.key === currentSheetKey) {
     renderVersionOverlay();
@@ -2127,13 +2318,6 @@ function renderSettingsPanel() {
       </div>
       <div class="settings-row">
         <div class="settings-copy">
-          <p class="settings-title">ALL Range</p>
-          <p class="settings-note">${escapeHtml(getAllModeSummary())}</p>
-        </div>
-        <button class="secondary-button settings-action" id="openAllModeRangeOverlay" type="button">Choose Range</button>
-      </div>
-      <div class="settings-row">
-        <div class="settings-copy">
           <p class="settings-title">Clear Data</p>
         </div>
         <button class="danger-button" id="clearProfileData">Clear</button>
@@ -2229,7 +2413,6 @@ async function clearProfileData() {
   profile = createDefaultProfile();
   applyTheme();
   settingsOpen = false;
-  allModeRangeOverlayOpen = false;
   document.cookie = `${PROFILE_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
 
   if (currentSheetKey === ALL_SHEETS_KEY) {
@@ -2261,7 +2444,6 @@ async function switchSheetVersion(nextKey) {
   currentSheetKey = nextVersion.key;
   saveSelectedSheet(currentSheetKey);
   versionOverlayOpen = false;
-  allModeRangeOverlayOpen = false;
   renderVersionSelector();
   renderHeader();
 
